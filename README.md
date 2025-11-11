@@ -13,13 +13,13 @@ cmake ..
 make
 ```
 
-After build solution is under path `build/gwatch`
+After build solution is under path `build/gwatch`.
 For basic running you can use fild `build/gwatch_test` that is fibbonaci program
 
 ## Running tests
 Tests are build alongside the program so the only thing you need to do is run
 `ctest` in build folder or go to `build/tests/tests`
-It is important to remember than when you run tests manually you need to watch for working directory
+It is important to remember than when you run tests manually you need to watch for working directory.
 
 ## Possibilities 
 - Tracking integer variable of size 1, 2, 4 or 8 bytes.
@@ -28,6 +28,6 @@ It is important to remember than when you run tests manually you need to watch f
 
 ## Known problems
 - System for checking if watchpoint is read or write is very bare and inaccurate.
-I though about using two watchpoints in debug registers, but it sounded really excessive and not scalable as hardware watchpoints are scarce resource (only 4 on x86)
+I though about using two watchpoints in debug registers, but it sounded really excessive and not scalable as hardware watchpoints are scarce resource (only 4 on x86).
 
 
