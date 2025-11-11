@@ -113,3 +113,21 @@ TEST(ProcessTest, InvalidSymbolSize) {
                std::invalid_argument);
   process.kill();
 }
+
+TEST(ProcessTest, Read64BitValue) {
+  ELF elf;
+  elf.load("tested_programs/basic_test");
+  elf.validate();
+
+  elf64_sym_t *symbol = elf.get_symbol("large_var");
+  ASSERT_NE(symbol, nullptr);
+  EXPECT_EQ(symbol->size, sizeof(int64_t));
+
+  Process process(elf, {});
+  process.spawn();
+  long long_value;
+  ASSERT_NO_THROW(long_value = process.read_memory("large_var"));
+
+  EXPECT_EQ(long_value, 0x1234567890ABCDEF);
+  process.kill();
+}

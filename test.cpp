@@ -1,17 +1,14 @@
 #include <iostream>
 
-int a = 5;
-int b = 10;
-int c = 0;
+int64_t a = 0;
+int64_t b = 0;
+int64_t c = 1;
 
 int main() {
-  // Make a loop of fibbonaci-like iterations
-  for (int i = 0; i < 30; ++i) {
-    int temp = a;
+  for (int i = 0; i < 50; ++i) {
     a = b;
     b = c;
-    c = temp + b;
-    std::cout << "Iteration " << i << ": a=" << a << ", b=" << b << ", c=" << c
-              << std::endl;
+    c = a + b;
   }
+  std::cout << "Fibonacci sequence computed up to 50: " << c << std::endl;
 }

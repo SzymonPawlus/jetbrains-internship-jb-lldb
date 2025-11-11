@@ -2,6 +2,7 @@
 #include <fstream>
 #include <iostream>
 #include <limits.h>
+#include <limits>
 #include <signal.h>
 #include <sstream>
 #include <stdexcept>
@@ -69,15 +70,10 @@ long Process::read_memory(const std::string &symbol_name) {
   if (errno != 0) {
     throw std::runtime_error("Failed to read memory");
   }
-  // Take alignment into account if needed
-  std::cout << "Read memory at symbol '" << symbol_name << "' (address: 0x"
-            << std::hex << calculate_address(symbol->value) << "): 0x" << data
-            << std::dec << std::endl;
 
-  // Mask to symbol size
   uintptr_t offset = calculate_address(symbol->value) & 0b111;
   data >>= (offset * 8);
-  long mask = (1ULL << (symbol->size * 8)) - 1;
+  long mask = (std::numeric_limits<long>::max()) >> (64 - symbol->size * 8);
   data &= mask;
 
   return data;
