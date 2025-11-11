@@ -1,5 +1,6 @@
 #include "process.h"
 #include <fstream>
+#include <iostream>
 #include <limits.h>
 #include <signal.h>
 #include <sstream>
@@ -17,9 +18,8 @@ static std::string canonicalize_path(const std::string &path) {
   return std::string(real_path);
 }
 
-Process::Process(pid_t pid, const ELF &executable,
-                 const std::vector<std::string> &&args)
-    : pid(pid), executable(executable), args(args), running(false),
+Process::Process(const ELF &executable, const std::vector<std::string> &&args)
+    : pid(0), executable(executable), args(args), running(false),
       symbol_cache() {}
 
 pid_t Process::get_pid() const { return pid; }
@@ -64,15 +64,21 @@ void Process::continue_execution() {
 long Process::read_memory(const std::string &symbol_name) {
   errno = 0;
   const elf64_sym_t *symbol = find_symbol(symbol_name);
-  long data =
-      ptrace(PTRACE_PEEKDATA, pid, calculate_address(symbol->value), nullptr);
+  long data = ptrace(PTRACE_PEEKDATA, pid,
+                     calculate_address(symbol->value) & ~0b111, nullptr);
   if (errno != 0) {
     throw std::runtime_error("Failed to read memory");
   }
   // Take alignment into account if needed
-  uintptr_t aligment =
-      reinterpret_cast<uintptr_t>(symbol->value) % sizeof(long);
-  data >>= (aligment * 8);
+  std::cout << "Read memory at symbol '" << symbol_name << "' (address: 0x"
+            << std::hex << calculate_address(symbol->value) << "): 0x" << data
+            << std::dec << std::endl;
+
+  // Mask to symbol size
+  uintptr_t offset = calculate_address(symbol->value) & 0b111;
+  data >>= (offset * 8);
+  long mask = (1ULL << (symbol->size * 8)) - 1;
+  data &= mask;
 
   return data;
 }

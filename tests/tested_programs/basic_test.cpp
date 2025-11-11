@@ -3,7 +3,11 @@
 int a = 5;
 int b = 10;
 int c = 0;
-
+struct {
+  int x;
+  double y;
+  float z;
+} unused_struct;
 int main() {
   // Make a loop of fibbonaci-like iterations
   for (int i = 0; i < 30; ++i) {

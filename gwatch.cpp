@@ -58,7 +58,7 @@ int main(int argc, char *argv[]) {
     ELF elf;
     elf.load(options.exec_path);
     elf.validate();
-    Process process(0, elf, std::move(options.exec_args));
+    Process process(elf, std::move(options.exec_args));
     process.spawn();
 
     std::string symbol = options.var;

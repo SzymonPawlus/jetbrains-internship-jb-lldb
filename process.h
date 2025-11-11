@@ -16,8 +16,7 @@ class Process {
   std::map<std::string, elf64_sym_t> symbol_cache;
 
 public:
-  Process(pid_t pid, const ELF &executable,
-          const std::vector<std::string> &&args);
+  Process(const ELF &executable, const std::vector<std::string> &&args);
 
   pid_t get_pid() const;
   void spawn();
