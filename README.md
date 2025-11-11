@@ -14,7 +14,7 @@ make
 ```
 
 After build solution is under path `build/gwatch`.
-For basic running you can use fild `build/gwatch_test` that is fibbonaci program
+For basic running you can use fild `build/gwatch_test` that is fibbonaci program.
 
 ## Running tests
 Tests are build alongside the program so the only thing you need to do is run
