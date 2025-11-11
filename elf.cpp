@@ -98,3 +98,10 @@ elf64_sym_t *ELF::get_symbol(const std::string &name) {
   }
   throw std::runtime_error("Symbol not found: " + name);
 }
+
+const std::string &ELF::get_path() const { return path_; }
+
+bool ELF::is_pie() {
+  elf64_header_t *header = get_header();
+  return header->type == 3; // ET_DYN
+}

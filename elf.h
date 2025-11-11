@@ -1,3 +1,4 @@
+#pragma once
 #include <cstdint>
 #include <string>
 #include <vector>
@@ -20,17 +21,6 @@ enum class ELFInstructionSet : uint16_t {
   IA_64 = 50,
   x86_64 = 62,
   AArch64 = 183,
-};
-
-enum class ELFProgramHeaderType : uint32_t {
-  Null = 0,
-  Load = 1,
-  Dynamic = 2,
-  Interp = 3,
-  Note = 4,
-  Shlib = 5,
-  Phdr = 6,
-  Tls = 7,
 };
 
 struct elf64_header_t {
@@ -104,4 +94,6 @@ public:
   void validate() const;
   ELFSize getSize() const;
   elf64_sym_t *get_symbol(const std::string &name);
+  const std::string &get_path() const;
+  bool is_pie();
 };
