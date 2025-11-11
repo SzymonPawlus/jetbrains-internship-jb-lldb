@@ -80,10 +80,9 @@ elf64_shdr_t *ELF::get_section_header(const std::string &name) {
   throw std::runtime_error("Section not found: " + name);
 }
 
-elf64_sym_t *ELF::get_symbol(const std::string &name) {
-  elf64_shdr_t *symtab_header = get_section_header(".symtab");
-  elf64_shdr_t *strtab_header = get_section_header(".strtab");
-
+elf64_sym_t *ELF::get_symbol_from_table(elf64_shdr_t *symtab_header,
+                                        elf64_shdr_t *strtab_header,
+                                        const std::string &name) {
   const char *strtab =
       reinterpret_cast<const char *>(data.data() + strtab_header->offset);
   size_t num_symbols = symtab_header->size / symtab_header->entsize;
@@ -96,7 +95,23 @@ elf64_sym_t *ELF::get_symbol(const std::string &name) {
       return symbol;
     }
   }
-  throw std::runtime_error("Symbol not found: " + name);
+  return nullptr;
+}
+
+elf64_sym_t *ELF::get_symbol(const std::string &name) {
+  // Try first in .symtab
+  elf64_shdr_t *symtab_header = get_section_header(".symtab");
+  elf64_shdr_t *strtab_header = get_section_header(".strtab");
+  elf64_sym_t *symbol =
+      get_symbol_from_table(symtab_header, strtab_header, name);
+  if (symbol) {
+    return symbol;
+  }
+  // Then try in .dynsym
+  symtab_header = get_section_header(".dynsym");
+  strtab_header = get_section_header(".dynstr");
+  symbol = get_symbol_from_table(symtab_header, strtab_header, name);
+  return symbol;
 }
 
 const std::string &ELF::get_path() const { return path_; }

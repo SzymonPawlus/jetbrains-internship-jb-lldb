@@ -1,11 +1,11 @@
 #include <iostream>
 
-int a = 0;
-int b = 0;
-int c = 1;
+int64_t a = 0;
+int64_t b = 0;
+int64_t c = 1;
 
 int main() {
-  for (int i = 0; i < 30; ++i) {
+  for (int i = 0; i < 50; ++i) {
     a = b;
     b = c;
     c = a + b;

@@ -87,6 +87,9 @@ class ELF {
   elf64_phdr_t *get_program_header(size_t index);
   elf64_shdr_t *get_section_header(size_t index);
   elf64_shdr_t *get_section_header(const std::string &name);
+  elf64_sym_t *get_symbol_from_table(elf64_shdr_t *symtab_header,
+                                     elf64_shdr_t *strtab_header,
+                                     const std::string &name);
 
 public:
   ELF();

@@ -19,7 +19,8 @@ static std::string canonicalize_path(const std::string &path) {
 
 Process::Process(pid_t pid, const ELF &executable,
                  const std::vector<std::string> &&args)
-    : pid(pid), executable(executable), args(args), running(false) {}
+    : pid(pid), executable(executable), args(args), running(false),
+      symbol_cache() {}
 
 pid_t Process::get_pid() const { return pid; }
 void Process::spawn() {
@@ -60,21 +61,27 @@ void Process::continue_execution() {
   ptrace(PTRACE_CONT, pid, nullptr, nullptr);
 }
 
-long Process::read_memory(uintptr_t addr) {
+long Process::read_memory(const std::string &symbol_name) {
   errno = 0;
-  long data = ptrace(PTRACE_PEEKDATA, pid, calculate_address(addr), nullptr);
+  const elf64_sym_t *symbol = find_symbol(symbol_name);
+  long data =
+      ptrace(PTRACE_PEEKDATA, pid, calculate_address(symbol->value), nullptr);
   if (errno != 0) {
     throw std::runtime_error("Failed to read memory");
   }
   // Take alignment into account if needed
-  uintptr_t aligment = reinterpret_cast<uintptr_t>(addr) % sizeof(long);
+  uintptr_t aligment =
+      reinterpret_cast<uintptr_t>(symbol->value) % sizeof(long);
   data >>= (aligment * 8);
 
   return data;
 }
 
-void Process::write_memory(uintptr_t addr, long value) {
-  if (ptrace(PTRACE_POKEDATA, pid, calculate_address(addr), value) == -1) {
+// UNUSED function written for completeness
+void Process::write_memory(const std::string &symbol_name, long value) {
+  const elf64_sym_t *symbol = find_symbol(symbol_name);
+  if (ptrace(PTRACE_POKEDATA, pid, calculate_address(symbol->value), value) ==
+      -1) {
     throw std::runtime_error("Failed to write memory");
   }
 }
@@ -94,14 +101,15 @@ Process::~Process() {
   }
 }
 
-void Process::set_watchpoint(uintptr_t addr, int length, bool write_only) {
+void Process::set_watchpoint(const std::string &symbol_name, bool write_only) {
+  const elf64_sym_t *symbol = find_symbol(symbol_name);
   long dr7 =
       ptrace(PTRACE_PEEKUSER, pid, offsetof(user, u_debugreg[7]), nullptr);
   dr7 |= 1; // Enable local breakpoint 0
 
   int rw = write_only ? 1 : 3; // 1 for write, 3 for read/write
   int len_bits;
-  switch (length) {
+  switch (symbol->size) {
   case 1:
     len_bits = 0;
     break;
@@ -122,11 +130,11 @@ void Process::set_watchpoint(uintptr_t addr, int length, bool write_only) {
   dr7 |= (rw << 16) | (len_bits << 18);
 
   ptrace(PTRACE_POKEUSER, pid, offsetof(user, u_debugreg[0]),
-         calculate_address(addr));
+         calculate_address(symbol->value));
   ptrace(PTRACE_POKEUSER, pid, offsetof(user, u_debugreg[7]), dr7);
 }
 
-void Process::wait() {
+bool Process::wait() {
   if (!running) {
     throw std::runtime_error("Process is not running");
   }
@@ -136,11 +144,12 @@ void Process::wait() {
     int sig = WSTOPSIG(status);
     if (sig == SIGTRAP) {
       // This is nice, return
-      return;
+      return true;
     }
     throw std::runtime_error("Process stopped with signal: " +
                              std::to_string(sig));
   }
+  return false;
 }
 
 std::optional<uintptr_t> Process::get_base_address() {
@@ -178,4 +187,17 @@ uintptr_t Process::calculate_address(uintptr_t addr) {
   } else {
     return addr;
   }
+}
+
+const elf64_sym_t *Process::find_symbol(const std::string &name) {
+  // Check in cache first
+  if (symbol_cache.find(name) != symbol_cache.end()) {
+    return &symbol_cache[name];
+  }
+  elf64_sym_t *symbol = executable.get_symbol(name);
+  if (symbol) {
+    symbol_cache[name] = *symbol;
+    return &symbol_cache[name];
+  }
+  throw std::runtime_error("Symbol not found: " + name);
 }
