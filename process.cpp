@@ -30,15 +30,14 @@ void Process::spawn() {
   if (pid == 0) {
     // Child process
     ptrace(PTRACE_TRACEME, 0, nullptr, nullptr);
-    execv(executable.get_path().c_str(),
-          reinterpret_cast<char *const *>(args.data()));
     std::vector<char *> argv;
     for (const auto &arg : args) {
       argv.push_back(const_cast<char *>(arg.c_str()));
     }
     argv.push_back(nullptr);
     execv(executable.get_path().c_str(), argv.data());
-
+    // If execv returns, it failed
+    _exit(1);
   } else if (pid > 0) {
     running = true;
     int status;
@@ -65,13 +64,13 @@ void Process::continue_execution() {
 long Process::read_memory(const std::string &symbol_name) {
   errno = 0;
   const elf64_sym_t *symbol = find_symbol(symbol_name);
-  long data = ptrace(PTRACE_PEEKDATA, pid,
-                     calculate_address(symbol->value) & ~0b111, nullptr);
+  uintptr_t addr = calculate_address(symbol->value);
+  long data = ptrace(PTRACE_PEEKDATA, pid, addr & ~0b111, nullptr);
   if (errno != 0) {
     throw std::runtime_error("Failed to read memory");
   }
 
-  uintptr_t offset = calculate_address(symbol->value) & 0b111;
+  uintptr_t offset = addr & 0b111;
   data >>= (offset * 8);
   long mask = (std::numeric_limits<long>::max()) >> (64 - symbol->size * 8);
   data &= mask;
@@ -161,7 +160,7 @@ std::optional<uintptr_t> Process::get_base_address() {
     return std::nullopt;
   }
   std::string line;
-  // Get canonical path of the executable
+  // Get canonical path of the executable once
   std::string exe_path = canonicalize_path(executable.get_path());
   while (std::getline(maps_file, line)) {
     std::istringstream iss(line);
@@ -171,13 +170,23 @@ std::optional<uintptr_t> Process::get_base_address() {
     }
     std::getline(iss, pathname); // Get the rest of the line as pathname
     pathname.erase(0, pathname.find_first_not_of(" \t"));
-    if (canonicalize_path(pathname) == exe_path) {
-      size_t dash_pos = address_range.find('-');
-      if (dash_pos != std::string::npos) {
-        std::string start_addr_str = address_range.substr(0, dash_pos);
-        uintptr_t start_addr = std::stoull(start_addr_str, nullptr, 16);
-        return start_addr;
+    // Check if pathname is not empty before canonicalizing
+    if (pathname.empty()) {
+      continue;
+    }
+    // Try to canonicalize and compare
+    try {
+      if (canonicalize_path(pathname) == exe_path) {
+        size_t dash_pos = address_range.find('-');
+        if (dash_pos != std::string::npos) {
+          std::string start_addr_str = address_range.substr(0, dash_pos);
+          uintptr_t start_addr = std::stoull(start_addr_str, nullptr, 16);
+          return start_addr;
+        }
       }
+    } catch (...) {
+      // Skip entries that can't be canonicalized (e.g., deleted files, special maps)
+      continue;
     }
   }
   return std::nullopt;
