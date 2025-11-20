@@ -1,0 +1,2 @@
+/usr/bin/ar qc libgwatch_lib.a CMakeFiles/gwatch_lib.dir/elf.cpp.o CMakeFiles/gwatch_lib.dir/process.cpp.o
+/usr/bin/ranlib libgwatch_lib.a

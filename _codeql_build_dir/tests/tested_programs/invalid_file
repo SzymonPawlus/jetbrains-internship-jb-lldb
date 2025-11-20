@@ -1,0 +1,1 @@
+this is not an ELF, but it should be long enought that it vanishes on validation and not on the loading stage when it finds out it is too short

@@ -1,0 +1,5 @@
+if(EXISTS "/home/runner/work/jetbrains-internship-jb-lldb/jetbrains-internship-jb-lldb/_codeql_build_dir/tests/tests[1]_tests.cmake")
+  include("/home/runner/work/jetbrains-internship-jb-lldb/jetbrains-internship-jb-lldb/_codeql_build_dir/tests/tests[1]_tests.cmake")
+else()
+  add_test(tests_NOT_BUILT tests_NOT_BUILT)
+endif()

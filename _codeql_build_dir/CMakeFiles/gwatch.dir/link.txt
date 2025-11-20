@@ -1,0 +1,1 @@
+/home/runner/work/jetbrains-internship-jb-lldb/.codeql-scratch/dbs/cpp/working/autobuild/bin/c++ -O3 -DNDEBUG -Wl,--dependency-file=CMakeFiles/gwatch.dir/link.d CMakeFiles/gwatch.dir/gwatch.cpp.o CMakeFiles/gwatch.dir/elf.cpp.o CMakeFiles/gwatch.dir/process.cpp.o -o gwatch
