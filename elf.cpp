@@ -1,7 +1,7 @@
 #include "elf.h"
 #include <fstream>
 
-ELF::ELF() : data(), path_("") {}
+ELF::ELF() : data(), path_(""), section_cache() {}
 
 void ELF::load(const std::string &path) {
   path_ = path;
@@ -21,6 +21,9 @@ void ELF::load(const std::string &path) {
   if (!file.read(reinterpret_cast<char *>(data.data()), size)) {
     throw std::runtime_error("Failed to read ELF file: " + path);
   }
+  
+  // Clear cache when loading new file
+  section_cache.clear();
 }
 
 void ELF::validate() const {
@@ -65,6 +68,12 @@ elf64_shdr_t *ELF::get_section_header(size_t index) {
 }
 
 elf64_shdr_t *ELF::get_section_header(const std::string &name) {
+  // Check cache first
+  auto it = section_cache.find(name);
+  if (it != section_cache.end()) {
+    return it->second;
+  }
+  
   elf64_header_t *header = get_header();
   elf64_shdr_t *shstrtab_header = get_section_header(header->shstrndx);
   const char *shstrtab =
@@ -74,6 +83,8 @@ elf64_shdr_t *ELF::get_section_header(const std::string &name) {
     elf64_shdr_t *section_header = get_section_header(i);
     const char *section_name = shstrtab + section_header->name;
     if (name == section_name) {
+      // Cache the result
+      section_cache[name] = section_header;
       return section_header;
     }
   }

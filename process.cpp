@@ -161,7 +161,7 @@ std::optional<uintptr_t> Process::get_base_address() {
     return std::nullopt;
   }
   std::string line;
-  // Get canonical path of the executable
+  // Get canonical path of the executable once
   std::string exe_path = canonicalize_path(executable.get_path());
   while (std::getline(maps_file, line)) {
     std::istringstream iss(line);
@@ -171,13 +171,23 @@ std::optional<uintptr_t> Process::get_base_address() {
     }
     std::getline(iss, pathname); // Get the rest of the line as pathname
     pathname.erase(0, pathname.find_first_not_of(" \t"));
-    if (canonicalize_path(pathname) == exe_path) {
-      size_t dash_pos = address_range.find('-');
-      if (dash_pos != std::string::npos) {
-        std::string start_addr_str = address_range.substr(0, dash_pos);
-        uintptr_t start_addr = std::stoull(start_addr_str, nullptr, 16);
-        return start_addr;
+    // Check if pathname is not empty before canonicalizing
+    if (pathname.empty()) {
+      continue;
+    }
+    // Try to canonicalize and compare
+    try {
+      if (canonicalize_path(pathname) == exe_path) {
+        size_t dash_pos = address_range.find('-');
+        if (dash_pos != std::string::npos) {
+          std::string start_addr_str = address_range.substr(0, dash_pos);
+          uintptr_t start_addr = std::stoull(start_addr_str, nullptr, 16);
+          return start_addr;
+        }
       }
+    } catch (...) {
+      // Skip entries that can't be canonicalized (e.g., deleted files, special maps)
+      continue;
     }
   }
   return std::nullopt;

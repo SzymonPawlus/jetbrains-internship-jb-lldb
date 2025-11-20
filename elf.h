@@ -1,5 +1,6 @@
 #pragma once
 #include <cstdint>
+#include <map>
 #include <string>
 #include <vector>
 
@@ -83,6 +84,7 @@ struct elf64_sym_t {
 class ELF {
   std::vector<uint8_t> data;
   std::string path_;
+  std::map<std::string, elf64_shdr_t *> section_cache;
   elf64_header_t *get_header();
   elf64_phdr_t *get_program_header(size_t index);
   elf64_shdr_t *get_section_header(size_t index);
