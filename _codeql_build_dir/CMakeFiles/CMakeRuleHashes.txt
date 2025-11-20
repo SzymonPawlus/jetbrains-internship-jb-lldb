@@ -1,3 +1,0 @@
-# Hashes of file build rules.
-4bd532c99a243c5e6c3bb19f974d633e tests/CMakeFiles/generate_invalid_file
-54c88b5acb09968770c70d2b5f4f8bb1 tests/tested_programs/invalid_file
