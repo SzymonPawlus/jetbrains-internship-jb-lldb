@@ -30,15 +30,14 @@ void Process::spawn() {
   if (pid == 0) {
     // Child process
     ptrace(PTRACE_TRACEME, 0, nullptr, nullptr);
-    execv(executable.get_path().c_str(),
-          reinterpret_cast<char *const *>(args.data()));
     std::vector<char *> argv;
     for (const auto &arg : args) {
       argv.push_back(const_cast<char *>(arg.c_str()));
     }
     argv.push_back(nullptr);
     execv(executable.get_path().c_str(), argv.data());
-
+    // If execv returns, it failed
+    _exit(1);
   } else if (pid > 0) {
     running = true;
     int status;
