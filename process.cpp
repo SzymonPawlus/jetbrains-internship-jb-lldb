@@ -64,13 +64,13 @@ void Process::continue_execution() {
 long Process::read_memory(const std::string &symbol_name) {
   errno = 0;
   const elf64_sym_t *symbol = find_symbol(symbol_name);
-  long data = ptrace(PTRACE_PEEKDATA, pid,
-                     calculate_address(symbol->value) & ~0b111, nullptr);
+  uintptr_t addr = calculate_address(symbol->value);
+  long data = ptrace(PTRACE_PEEKDATA, pid, addr & ~0b111, nullptr);
   if (errno != 0) {
     throw std::runtime_error("Failed to read memory");
   }
 
-  uintptr_t offset = calculate_address(symbol->value) & 0b111;
+  uintptr_t offset = addr & 0b111;
   data >>= (offset * 8);
   long mask = (std::numeric_limits<long>::max()) >> (64 - symbol->size * 8);
   data &= mask;
